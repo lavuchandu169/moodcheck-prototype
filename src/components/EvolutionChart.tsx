@@ -1,7 +1,7 @@
-import { useId, useState } from "react";
 import { Line } from "react-chartjs-2";
 import type { HistoryEntry } from "../types";
 import { MOOD_OPTIONS } from "../data/moods";
+import { AccessibleFigure } from "./AccessibleFigure";
 
 interface Props {
   history: HistoryEntry[];
@@ -13,9 +13,6 @@ const moodLabel = (score: number) =>
   ).label;
 
 export function EvolutionChart({ history }: Props) {
-  const [showTable, setShowTable] = useState(false);
-  const tableId = useId();
-
   const labels = history.map((h) =>
     new Date(h.date).toLocaleDateString(undefined, {
       month: "short",
@@ -44,24 +41,31 @@ export function EvolutionChart({ history }: Props) {
   )} to ${moodLabel(Math.max(...history.map((h) => h.score)))}.`;
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-          Evolution — last 14 days
-        </h3>
-        <button
-          type="button"
-          onClick={() => setShowTable((v) => !v)}
-          aria-pressed={showTable}
-          aria-controls={tableId}
-          className="text-xs font-medium text-violet-600 dark:text-violet-400 underline underline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-violet-500 rounded"
-        >
-          {showTable ? "View as chart" : "View as table"}
-        </button>
-      </div>
-
-      {showTable ? (
-        <table id={tableId} className="w-full text-sm border-collapse">
+    <AccessibleFigure
+      title="Evolution — last 14 days"
+      summary={summary}
+      chart={
+        <Line
+          data={data}
+          options={{
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              y: {
+                min: 1,
+                max: 5,
+                ticks: {
+                  stepSize: 1,
+                  callback: (value) => moodLabel(Number(value)),
+                },
+              },
+            },
+          }}
+        />
+      }
+      table={
+        <table className="w-full text-sm border-collapse">
           <caption className="sr-only">{summary}</caption>
           <thead>
             <tr className="text-left text-slate-500 dark:text-slate-400">
@@ -89,33 +93,7 @@ export function EvolutionChart({ history }: Props) {
             ))}
           </tbody>
         </table>
-      ) : (
-        <div
-          id={tableId}
-          role="img"
-          aria-label={summary}
-          className="h-48"
-        >
-          <Line
-            data={data}
-            options={{
-              responsive: true,
-              maintainAspectRatio: false,
-              plugins: { legend: { display: false } },
-              scales: {
-                y: {
-                  min: 1,
-                  max: 5,
-                  ticks: {
-                    stepSize: 1,
-                    callback: (value) => moodLabel(Number(value)),
-                  },
-                },
-              },
-            }}
-          />
-        </div>
-      )}
-    </div>
+      }
+    />
   );
 }
